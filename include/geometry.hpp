@@ -13,6 +13,15 @@
 
 namespace geometry {
 
+struct Line;
+struct Triangle;
+struct Rectangle;
+struct RegularPolygon;
+struct Circle;
+class Polygon;
+
+using Shape = std::variant<Line, Triangle, Rectangle, RegularPolygon, Circle, Polygon>;
+
 /*
  * В коде везде используется DummyClass. Ваша задача - выбрать наиболее подходящий тип для решения задачи
  */
@@ -144,13 +153,12 @@ struct Circle {
 class Polygon {
 public:
     /* ваш код здесь */
-
 private:
     std::vector<Point2D> points_;
     BoundingBox bounding_box_;
 };
 
-using Shape = std::variant<Line, Triangle, Rectangle, RegularPolygon, Circle, Polygon>;
+// using Shape = std::variant<Line, Triangle, Rectangle, RegularPolygon, Circle, Polygon>;
 
 enum class GeometryError { Unsupported, NoIntersection, InvalidInput, DegenrateCase, InsufficientPoints };
 
