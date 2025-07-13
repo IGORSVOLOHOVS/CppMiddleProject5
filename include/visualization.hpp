@@ -1,3 +1,4 @@
+#pragma once
 #include "geometry.hpp"
 #include "triangulation.hpp"
 #include <span>

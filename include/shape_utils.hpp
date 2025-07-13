@@ -63,7 +63,7 @@ private:
     std::uniform_int_distribution<int> type_dist;
 };
 
-std::vector<std::pair<Shape, Shape>> FindAllCollisions(DummyClass shapes) {
+std::vector<std::pair<Shape, Shape>> FindAllCollisions(std::span<const Shape> shapes) {
     std::vector<std::pair<Shape, Shape>> collisions;
 
     /*
@@ -77,7 +77,7 @@ std::vector<std::pair<Shape, Shape>> FindAllCollisions(DummyClass shapes) {
     return collisions;
 }
 
-std::optional<size_t> FindHighestShape(DummyClass shapes) {
+std::optional<size_t> FindHighestShape(std::span<const Shape>  shapes) {
 
     /*
      * Используйте библиотеку ranges, чтобы найти самую высокую фигуру

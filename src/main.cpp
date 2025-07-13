@@ -15,7 +15,7 @@ using namespace geometry;
 namespace rng = std::ranges;
 namespace views = std::ranges::views;
 
-void PrintAllIntersections(const Shape &shape, DummyClass others) {
+void PrintAllIntersections(const Shape &shape, std::span<const Shape>  others) {
     std::println("\n=== Intersections ===");
 
     /*
@@ -28,7 +28,7 @@ void PrintAllIntersections(const Shape &shape, DummyClass others) {
      */
 }
 
-void PrintDistancesFromPointToShapes(Point2D p, DummyClass shapes) {
+void PrintDistancesFromPointToShapes(Point2D p, std::span<const Shape>  shapes) {
     std::println("\n=== Distance from Point Test ===");
     std::println("Testing point: {} ", p);
 
@@ -39,7 +39,7 @@ void PrintDistancesFromPointToShapes(Point2D p, DummyClass shapes) {
      */
 }
 
-void PerformShapeAnalysis(DummyClass shapes) {
+void PerformShapeAnalysis(std::span<const Shape>  shapes) {
     std::println("\n=== Shape Analysis ===");
 
     /*
