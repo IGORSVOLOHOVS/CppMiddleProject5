@@ -2,5 +2,5 @@
     "files.eol": "\n",
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
-    "clangd.path": "/usr/bin/clangd-19"
+    "clangd.path": "/usr/bin/clangd-20"
 }

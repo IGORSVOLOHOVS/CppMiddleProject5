@@ -14,14 +14,14 @@ protected:
     std::vector<Shape> shapes_{c1, r1, l1};
 };
 
-TEST_F(ShapeUtilsTest, DISABLED_FindAllCollisions) {
+TEST_F(ShapeUtilsTest, FindAllCollisions) {
     Circle c2{{1,0}, 2};
     std::vector<Shape> collision_shapes = {c1, c2, r1};
     auto collisions = FindAllCollisions(collision_shapes);
     ASSERT_EQ(collisions.size(), 1);
 }
 
-TEST_F(ShapeUtilsTest, DISABLED_FindHighestShape) {
+TEST_F(ShapeUtilsTest, FindHighestShape) {
     auto highest_idx = FindHighestShape(shapes_);
     ASSERT_TRUE(highest_idx.has_value());
     EXPECT_EQ(*highest_idx, 1);

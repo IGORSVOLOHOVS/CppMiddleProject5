@@ -30,7 +30,7 @@ public:
         }
 
         const double t = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / det;
-        const double u = ((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / det;
+        const double u = -((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / det;
 
         if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
             return Point2D{p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y)};

@@ -64,28 +64,31 @@ private:
 };
 
 std::vector<std::pair<Shape, Shape>> FindAllCollisions(std::span<const Shape> shapes) {
-    std::vector<std::pair<Shape, Shape>> collisions;
+    namespace vs = std::views;
+    namespace rs = std::ranges;
 
-    /*
-     * Используйте библиотеку ranges, чтобы найти все коллизии между фигурами
-     *
-     * Важно: использование ручной итерации по фигурам не разрешается
-     *
-     * Также используйте наиболее эффективный метод добавления объектов в collisions
-     */
+    auto collisions = vs::cartesian_product(shapes, shapes)
+                | vs::filter([](const auto& p) {
+                      auto& [s1, s2] = p;
+                      return &s1 < &s2 && queries::BoundingBoxesOverlap(s1, s2);
+                  })
+                | vs::transform([](auto&& p){
+                      auto&& [s1, s2] = std::move(p);
+                      return std::pair{std::move(s1), std::move(s2)}; // Превращаем tuple в pair
+                  }) | rs::to<std::vector>();
 
     return collisions;
 }
 
-std::optional<size_t> FindHighestShape(std::span<const Shape>  shapes) {
+std::optional<size_t> FindHighestShape(std::span<const Shape> shapes) {
+    namespace rs = std::ranges;
+    
+    if (shapes.empty()) {
+        return std::nullopt;
+    }
 
-    /*
-     * Используйте библиотеку ranges, чтобы найти самую высокую фигуру
-     *
-     * Важно: использование ручной итерации по фигурам не разрешается
-     */
-
-    return std::nullopt;
+    auto it_highest = rs::max_element(shapes, {}, &queries::GetHeight);
+    return rs::distance(shapes.begin(), it_highest);
 }
 
 }  // namespace geometry::utils
