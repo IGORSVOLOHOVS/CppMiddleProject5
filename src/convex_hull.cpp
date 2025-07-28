@@ -1,4 +1,5 @@
 #include "convex_hull.hpp"
+#include "geometry.hpp"
 #include <algorithm>
 
 namespace geometry::convex_hull {
@@ -25,10 +26,10 @@ GeometryResult<std::vector<Point2D>> GrahamScan(std::span<const Point2D> points)
     auto points_to_sort = std::ranges::subrange(local_points.begin() + 1, local_points.end());
     std::ranges::sort(points_to_sort, [&](const Point2D& a, const Point2D& b) {
         double cross_prod = CrossProduct(a, p0, b);
-        if (cross_prod == 0) {
+        if (is_zero(cross_prod)) {
             return p0.DistanceTo(a) < p0.DistanceTo(b);
         }
-        return cross_prod > 0;
+        return is_greater(cross_prod, 0.0);
     });
     
     std::vector<Point2D> hull;

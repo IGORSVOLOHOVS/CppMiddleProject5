@@ -19,74 +19,75 @@ struct Multilambda : Ts... {
 struct PointToShapeDistanceVisitor {
     Point2D point;
 
-    explicit PointToShapeDistanceVisitor(const Point2D &p) : point(p) {}
+    explicit PointToShapeDistanceVisitor(const Point2D& p) : point(p) {}
 
     double operator()(const Line& line) const {
-        const Point2D& point0 = line.start;
-        const Point2D& point1 = line.end;
-        const auto v_segment = point1 - point0;
-        const auto v_to_point = point - point0;
+        const auto v_segment = line.end - line.start;
+        const auto v_to_point = point - line.start;
         const double segment_len_sq = v_segment.Dot(v_segment);
 
         if (std::abs(segment_len_sq) < 1e-9) {
-            return point.DistanceTo(point0);
+            return point.DistanceTo(line.start);
         }
 
         const double t = std::clamp(v_to_point.Dot(v_segment) / segment_len_sq, 0.0, 1.0);
-        const Point2D projection_point = point0 + v_segment * t;
+        const Point2D projection_point = line.start + v_segment * t;
         return point.DistanceTo(projection_point);
     }
 
     double operator()(const Circle& circle) const {
+        const double r = std::abs(circle.radius);
         const double dist_to_center = point.DistanceTo(circle.center_p);
-        return std::max(0.0, dist_to_center - circle.radius);
+        return std::max(0.0, dist_to_center - r);
     }
-    
+
     double operator()(const Rectangle& rect) const {
-        const double closest_x = std::clamp(point.x, rect.bottom_left.x, rect.bottom_left.x + rect.width);
-        const double closest_y = std::clamp(point.y, rect.bottom_left.y, rect.bottom_left.y + rect.height);
-        
-        return point.DistanceTo({closest_x, closest_y});
+        const auto [min_x, max_x] = std::minmax(rect.bottom_left.x, rect.bottom_left.x + rect.width);
+        const auto [min_y, max_y] = std::minmax(rect.bottom_left.y, rect.bottom_left.y + rect.height);
+
+        if (point.x >= min_x && point.x <= max_x && point.y >= min_y && point.y <= max_y) {
+            return 0.0;
+        }
+
+        return std::ranges::min(rect.Edges() | std::views::transform([this](const Line& edge) { return (*this)(edge); }));
     }
 
     double operator()(const Triangle& triangle) const {
-        double d1 = (*this)(Line{triangle.a, triangle.b});
-        double d2 = (*this)(Line{triangle.b, triangle.c});
-        double d3 = (*this)(Line{triangle.c, triangle.a});
+        const auto v1 = triangle.b - triangle.a, v2 = point - triangle.a;
+        const auto v3 = triangle.c - triangle.b, v4 = point - triangle.b;
+        const auto v5 = triangle.a - triangle.c, v6 = point - triangle.c;
+        const double c1 = v1.Cross(v2), c2 = v3.Cross(v4), c3 = v5.Cross(v6);
+
+        if ((c1 >= 0 && c2 >= 0 && c3 >= 0) || (c1 <= 0 && c2 <= 0 && c3 <= 0)) {
+            return 0.0;
+        }
         
-        return std::min({d1, d2, d3});
+        return std::ranges::min(triangle.Edges() | std::views::transform([this](const Line& edge) { return (*this)(edge); }));
     }
 
     double operator()(const RegularPolygon& poly) const {
         return (*this)(Polygon(poly.Vertices()));
     }
-    
+
     double operator()(const Polygon& poly) const {
         const auto& vertices = poly.Vertices();
-        if (vertices.empty()) {
-            return std::numeric_limits<double>::infinity();
+        if (vertices.empty()) return std::numeric_limits<double>::infinity();
+        if (vertices.size() == 1) return point.DistanceTo(vertices[0]);
+
+        bool inside = false;
+        for (size_t i = 0, j = vertices.size() - 1; i < vertices.size(); j = i++) {
+            if (((vertices[i].y > point.y) != (vertices[j].y > point.y)) &&
+                (point.x < (vertices[j].x - vertices[i].x) * (point.y - vertices[i].y) / (vertices[j].y - vertices[i].y) + vertices[i].x)) {
+                inside = !inside;
+            }
         }
-        if (vertices.size() == 1) {
-            return point.DistanceTo(vertices[0]);
+        if (inside) {
+            return 0.0;
         }
 
-        namespace vs = std::views;
-        namespace rs = std::ranges;
-
-        auto edges_view = vs::iota(0u, vertices.size())
-                        | vs::transform([&](size_t i) {
-                            return Line{vertices[i], vertices[(i + 1) % vertices.size()]};
-                        });
-
-        auto distances_view = edges_view
-                            | vs::transform([this](const Line& edge) {
-                                return (*this)(edge);
-                            });
-
-        return rs::min(distances_view);
+        auto distances_view = poly.Edges() | std::views::transform([this](const Line& edge) { return (*this)(edge); });
+        return std::ranges::min(distances_view);
     }
-
-    /* ваш код здесь */
 };
 
 /*
