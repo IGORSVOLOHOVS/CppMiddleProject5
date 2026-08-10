@@ -1,0 +1,116 @@
+# Configure, build and run the test suite the way the dev container does.
+#
+# The job ends in `ctest`. Convex hulls, triangulation and segment
+# intersection are all code that compiles perfectly while returning the wrong
+# polygon, so a build-only job would be worth nothing here.
+#
+# The toolchain mirrors .devcontainer/Dockerfile: GCC 15, C++26, the
+# -Wall -Werror that CMakeLists.txt turns on, GTest from conanfile.py with the
+# settings of .devcontainer/default, and gnuplot, which is what Matplot++ shells
+# out to.
+#
+# scripts/check_before_push.py runs exactly these steps locally.
+
+name: Build and test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-and-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Linux / GCC 15 / Conan / Debug
+    runs-on: ubuntu-latest
+    # Matplot++ is fetched from its master branch and built from source, which
+    # is the slow part of this job; the limit is generous enough for a cold
+    # cache and still short of holding a runner all day.
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # GCC 15 is what .devcontainer/Dockerfile installs; noble has no g++-15
+      # in the archive, so the toolchain PPA supplies it. The apt attempt comes
+      # first so the PPA drops out once the runner image ships GCC 15.
+      - name: Install GCC 15 and gnuplot
+        run: |
+          set -eux
+          sudo apt-get update
+          if ! sudo apt-get install -y --no-install-recommends g++-15 gcc-15; then
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends g++-15 gcc-15
+          fi
+          sudo apt-get install -y --no-install-recommends ccache gnuplot-nox
+          g++-15 --version
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Conan
+        run: pip install "conan>=2,<3"
+
+      - name: Restore the Conan cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: conan-linux-gcc15-${{ hashFiles('conanfile.py') }}
+          restore-keys: |
+            conan-linux-gcc15-
+
+      - name: Restore the compiler cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-linux-gcc15-${{ github.sha }}
+          restore-keys: |
+            ccache-linux-gcc15-
+
+      # CMakeLists.txt pulls CPM and then Matplot++ over the network on every
+      # configure. Keeping build/_deps means a cold run downloads them once.
+      - name: Restore the fetched dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-linux-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: |
+            deps-linux-
+
+      # Same settings as .devcontainer/default, except build_type: the
+      # linux-default preset configures Debug, so Conan has to generate the
+      # dependency files for Debug or find_package would come up empty.
+      - name: Install the dependencies
+        env:
+          CC: gcc-15
+          CXX: g++-15
+        run: |
+          set -eux
+          conan profile detect --force
+          conan install . \
+            -s build_type=Debug \
+            -s compiler=gcc \
+            -s compiler.version=15 \
+            -s compiler.cppstd=gnu23 \
+            -s compiler.libcxx=libstdc++11 \
+            --build=missing
+
+      - name: Configure
+        env:
+          CC: gcc-15
+          CXX: g++-15
+        run: cmake --preset linux-default -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      - name: Build
+        run: cmake --build --preset linux-default
+
+      - name: Test
+        run: ctest --preset linux-default
