@@ -2,8 +2,11 @@
 #include "geometry.hpp"
 #include <algorithm>
 #include <format>
+#include <map>
 #include <set>
-#include <flat_map> 
+#if __has_include(<flat_map>)
+#include <flat_map>
+#endif
 #include <vector>
 
 namespace geometry::triangulation {
@@ -86,6 +89,16 @@ struct Edge {
     }
 };
 
+// MSVC STL 14.44 ещё не поставляет <flat_map> (P0429R9), а libstdc++ 15 -
+// поставляет. std::map даёт тот же интерфейс и тот же порядок обхода (по
+// Edge::operator<), поэтому подстановка не меняет результат триангуляции -
+// меняется только раскладка контейнера в памяти.
+#ifdef __cpp_lib_flat_map
+using EdgeCountMap = std::flat_map<Edge, int>;
+#else
+using EdgeCountMap = std::map<Edge, int>;
+#endif
+
 inline GeometryResult<std::vector<DelaunayTriangle>> DelaunayTriangulation(std::span<const Point2D> points) {
     constexpr unsigned SCALE_COEF = 20;
 
@@ -121,7 +134,7 @@ inline GeometryResult<std::vector<DelaunayTriangle>> DelaunayTriangulation(std::
 
         if (bad_triangles.empty()) continue;
 
-        std::flat_map<Edge, int> edge_counts;
+        EdgeCountMap edge_counts;
         for (const auto& tri : bad_triangles) {
             auto v = tri.vertices();
             edge_counts[Edge(v[0], v[1])]++;

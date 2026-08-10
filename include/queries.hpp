@@ -42,8 +42,12 @@ struct PointToShapeDistanceVisitor {
     }
 
     double operator()(const Rectangle& rect) const {
-        const auto [min_x, max_x] = std::minmax(rect.bottom_left.x, rect.bottom_left.x + rect.width);
-        const auto [min_y, max_y] = std::minmax(rect.bottom_left.y, rect.bottom_left.y + rect.height);
+        // См. Rectangle::BoundBox(): std::minmax возвращает ссылки, а
+        // rect.bottom_left.x + rect.width - временное, которое умирает сразу.
+        const double right = rect.bottom_left.x + rect.width;
+        const double top = rect.bottom_left.y + rect.height;
+        const auto [min_x, max_x] = std::minmax(rect.bottom_left.x, right);
+        const auto [min_y, max_y] = std::minmax(rect.bottom_left.y, top);
 
         if (point.x >= min_x && point.x <= max_x && point.y >= min_y && point.y <= max_y) {
             return 0.0;

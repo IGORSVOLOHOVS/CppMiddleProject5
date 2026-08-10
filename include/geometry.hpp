@@ -39,7 +39,11 @@ using Shape = std::variant<Line, Triangle, Rectangle, RegularPolygon, Circle, Po
 inline constexpr double EPSILON = GEOMETRY_EPSILON;  
 
 [[nodiscard]] constexpr bool is_zero(double value) noexcept {
-    return std::abs(value) < EPSILON;
+    // Здесь нельзя вызвать std::abs: для double он стал constexpr только в
+    // C++23 (P0533R9). libstdc++ это уже умеет, а MSVC STL 14.44 - ещё нет,
+    // и функция переставала быть constexpr (C3615). Ручное сравнение даёт тот
+    // же результат на обеих платформах, включая -0.0 и NaN.
+    return (value < 0.0 ? -value : value) < EPSILON;
 }
 
 [[nodiscard]] constexpr bool are_equal(double a, double b) noexcept {
@@ -276,9 +280,15 @@ struct Rectangle {
     [[nodiscard]] Point2D Center() const noexcept { return {bottom_left.x + width / 2, bottom_left.y + height / 2}; }
     
     [[nodiscard]] BoundingBox BoundBox() const noexcept {
-        const auto [min_x, max_x] = std::minmax(bottom_left.x, bottom_left.x + width);
-        const auto [min_y, max_y] = std::minmax(bottom_left.y, bottom_left.y + height);
-        
+        // std::minmax возвращает пару ССЫЛОК. Передавать в неё временное
+        // `bottom_left.x + width` нельзя: временное умирает в конце выражения,
+        // и ссылки повисают. GCC на этом молча выдавал правильные числа, MSVC -
+        // мусор вроде 6.9e-310. Именованные локальные переменные лечат UB.
+        const double right = bottom_left.x + width;
+        const double top = bottom_left.y + height;
+        const auto [min_x, max_x] = std::minmax(bottom_left.x, right);
+        const auto [min_y, max_y] = std::minmax(bottom_left.y, top);
+
         return BoundingBox{.min_x = min_x, .min_y = min_y, .max_x = max_x, .max_y = max_y};
     }
 
@@ -288,8 +298,12 @@ struct Rectangle {
     }
 
     [[nodiscard]] std::vector<Point2D> Vertices() const noexcept {
-        const auto [min_x, max_x] = std::minmax(bottom_left.x, bottom_left.x + width);
-        const auto [min_y, max_y] = std::minmax(bottom_left.y, bottom_left.y + height);
+        // См. комментарий в BoundBox(): std::minmax отдаёт ссылки, поэтому
+        // сумму надо сначала положить в переменную.
+        const double right = bottom_left.x + width;
+        const double top = bottom_left.y + height;
+        const auto [min_x, max_x] = std::minmax(bottom_left.x, right);
+        const auto [min_y, max_y] = std::minmax(bottom_left.y, top);
 
         return {
             {min_x, min_y}, 

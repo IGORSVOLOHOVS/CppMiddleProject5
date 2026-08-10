@@ -53,7 +53,10 @@ void Draw(std::span<geometry::Shape> shapes) {
                    shape);
 
         // Add shape number
-        const auto center = shape.visit([](auto &&s) { return s.Center(); });
+        // Не shape.visit(...): метод-visit у std::variant - это C++26 (P2637R3),
+        // libstdc++ 15 его уже имеет, MSVC STL 14.44 - ещё нет. Свободная
+        // std::visit делает ровно то же самое и есть везде начиная с C++17.
+        const auto center = std::visit([](auto &&s) { return s.Center(); }, shape);
         auto t = text(center.x, center.y, std::to_string(index));
         t->font_size(14);
         t->color("black");
