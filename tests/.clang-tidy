@@ -1,0 +1,3 @@
+# gtest's ASSERT_TRUE returns from the test, and clang-tidy cannot see that an optional was checked.
+InheritParentConfig: true
+Checks: '-bugprone-unchecked-optional-access'
