@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include "geometry.hpp"
+#include <gtest/gtest.h>
 
 using namespace geometry;
 
@@ -52,9 +52,9 @@ TEST_F(GeometryTest, CircleProperties) {
 }
 
 TEST_F(GeometryTest, PolygonProperties) {
-    std::vector<Point2D> points = {{0,0}, {10,0}, {10,10}, {0,10}};
+    std::vector<Point2D> points = {{0, 0}, {10, 0}, {10, 10}, {0, 10}};
     Polygon poly(points);
-    
+
     auto bbox = poly.BoundBox();
     EXPECT_NEAR(bbox.min_x, 0, 1e-9);
     EXPECT_NEAR(bbox.max_x, 10, 1e-9);

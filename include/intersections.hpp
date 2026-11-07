@@ -1,8 +1,9 @@
-#pragma once
+#ifndef GEOMETRY_INTERSECTIONS_HPP
+#define GEOMETRY_INTERSECTIONS_HPP
 #include "geometry.hpp"
 #include <cmath>
 #include <optional>
-#include <variant> 
+#include <variant>
 
 namespace geometry::intersections {
 
@@ -14,7 +15,7 @@ using Intersection = std::variant<NoIntersection, Point2D, PointPair, InfiniteIn
 
 class IntersectionVisitor {
 public:
-    Intersection operator()(const Line& l1, const Line& l2) const {
+    Intersection operator()(const Line &l1, const Line &l2) const {
         const auto p1 = l1.start, v1 = l1.Direction();
         const auto p2 = l2.start, v2 = l2.Direction();
         const double denominator = v1.Cross(v2);
@@ -31,7 +32,7 @@ public:
         return NoIntersection{};
     }
 
-    Intersection operator()(const Line& l, const Circle& c) const {
+    Intersection operator()(const Line &l, const Circle &c) const {
         const double r = std::abs(c.radius);
         const Point2D d = l.Direction();
         const Point2D oc = l.start - c.center_p;
@@ -41,31 +42,33 @@ public:
         const double C = oc.Dot(oc) - r * r;
 
         const double discriminant = b * b - 4 * a * C;
-        if (discriminant < -1e-9) { 
+        if (discriminant < -1e-9) {
             return NoIntersection{};
         }
 
         std::vector<Point2D> points;
         const double sqrt_d = (discriminant > 0) ? std::sqrt(discriminant) : 0;
-        
+
         const double t1 = (-b - sqrt_d) / (2 * a);
         if (t1 >= 0 && t1 <= 1) {
             points.push_back(l.start + d * t1);
         }
 
-        if (discriminant > 1e-9) { 
+        if (discriminant > 1e-9) {
             const double t2 = (-b + sqrt_d) / (2 * a);
             if (t2 >= 0 && t2 <= 1) {
                 points.push_back(l.start + d * t2);
             }
         }
-        
-        if (points.empty()) return NoIntersection{};
-        if (points.size() == 1) return points[0];
+
+        if (points.empty())
+            return NoIntersection{};
+        if (points.size() == 1)
+            return points[0];
         return PointPair{points[0], points[1]};
     }
 
-    Intersection operator()(const Circle& c1, const Circle& c2) const {
+    Intersection operator()(const Circle &c1, const Circle &c2) const {
         const double r1 = std::abs(c1.radius), r2 = std::abs(c2.radius);
         const double d = c1.center_p.DistanceTo(c2.center_p);
 
@@ -79,10 +82,10 @@ public:
         const double a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
         const double h_squared = r1 * r1 - a * a;
         const double h = (h_squared > 0) ? std::sqrt(h_squared) : 0;
-        
+
         const Point2D p_mid = c1.center_p + (c2.center_p - c1.center_p) * (a / d);
 
-        if (h < 1e-9) { 
+        if (h < 1e-9) {
             return p_mid;
         }
 
@@ -92,7 +95,7 @@ public:
         return PointPair{p1, p2};
     }
 
-    Intersection operator()(auto&&, auto&&) const {
+    Intersection operator()(auto &&, auto &&) const {
         throw std::logic_error{"Intersection for these types is not supported."};
     }
 };
@@ -101,18 +104,20 @@ inline std::optional<Point2D> GetIntersectPoint(const Shape &shape1, const Shape
     const Intersection result = std::visit(IntersectionVisitor{}, shape1, shape2);
 
     return std::visit(
-        [](auto&& arg) -> std::optional<Point2D> {
+        [](auto &&arg) -> std::optional<Point2D> {
             using T = std::decay_t<decltype(arg)>;
 
             if constexpr (std::is_same_v<T, Point2D>) {
-                return arg; 
+                return arg;
             }
             if constexpr (std::is_same_v<T, PointPair>) {
-                return arg.first; 
+                return arg.first;
             }
             return std::nullopt;
         },
         result);
 }
 
-} // namespace geometry::intersections
+}  // namespace geometry::intersections
+
+#endif  // GEOMETRY_INTERSECTIONS_HPP

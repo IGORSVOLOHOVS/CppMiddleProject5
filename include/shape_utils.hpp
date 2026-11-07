@@ -1,7 +1,7 @@
-#pragma once
+#ifndef GEOMETRY_SHAPE_UTILS_HPP
+#define GEOMETRY_SHAPE_UTILS_HPP
 #include "geometry.hpp"
 #include "queries.hpp"
-#include <print>
 #include <random>
 #include <ranges>
 #include <utility>
@@ -40,6 +40,8 @@ public:
         case 4: {
             return Circle{center, size};
         }
+        default:
+            break;
         }
         return Circle{center, size};
     }
@@ -48,7 +50,7 @@ public:
         std::vector<Shape> shapes;
         shapes.reserve(count);
 
-        for (auto _ : std::views::iota(0u, count)) {
+        for (size_t i = 0; i < count; ++i) {
             shapes.push_back(GenerateRandomShape());
         }
 
@@ -65,24 +67,19 @@ private:
 
 std::vector<std::pair<Shape, Shape>> FindAllCollisions(std::span<const Shape> shapes) {
     namespace vs = std::views;
-    namespace rs = std::ranges;
-
-    auto collisions = vs::cartesian_product(shapes, shapes)
-                | vs::filter([](const auto& p) {
-                      auto& [s1, s2] = p;
-                      return &s1 < &s2 && queries::BoundingBoxesOverlap(s1, s2);
-                  })
-                | vs::transform([](auto&& p){
-                      auto&& [s1, s2] = std::move(p);
-                      return std::pair{std::move(s1), std::move(s2)}; // Превращаем tuple в pair
-                  }) | rs::to<std::vector>();
+    std::vector<std::pair<Shape, Shape>> collisions;
+    for (auto &&[s1, s2] : vs::cartesian_product(shapes, shapes)) {
+        if (&s1 < &s2 && queries::BoundingBoxesOverlap(s1, s2)) {
+            collisions.emplace_back(s1, s2);
+        }
+    }
 
     return collisions;
 }
 
 std::optional<size_t> FindHighestShape(std::span<const Shape> shapes) {
     namespace rs = std::ranges;
-    
+
     if (shapes.empty()) {
         return std::nullopt;
     }
@@ -92,3 +89,5 @@ std::optional<size_t> FindHighestShape(std::span<const Shape> shapes) {
 }
 
 }  // namespace geometry::utils
+
+#endif  // GEOMETRY_SHAPE_UTILS_HPP

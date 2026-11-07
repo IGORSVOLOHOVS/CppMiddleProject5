@@ -17,21 +17,20 @@ GeometryResult<std::vector<Point2D>> GrahamScan(std::span<const Point2D> points)
 
     std::vector<Point2D> local_points(points.begin(), points.end());
 
-    auto p0_it = std::ranges::min_element(local_points, {}, 
-        [](const Point2D& p) { return std::tie(p.y, p.x); });
+    auto p0_it = std::ranges::min_element(local_points, {}, [](const Point2D &p) { return std::tie(p.y, p.x); });
 
     std::iter_swap(local_points.begin(), p0_it);
     const Point2D p0 = local_points[0];
 
     auto points_to_sort = std::ranges::subrange(local_points.begin() + 1, local_points.end());
-    std::ranges::sort(points_to_sort, [&](const Point2D& a, const Point2D& b) {
+    std::ranges::sort(points_to_sort, [&](const Point2D &a, const Point2D &b) {
         double cross_prod = CrossProduct(a, p0, b);
         if (is_zero(cross_prod)) {
             return p0.DistanceTo(a) < p0.DistanceTo(b);
         }
         return is_greater(cross_prod, 0.0);
     });
-    
+
     std::vector<Point2D> hull;
     hull.reserve(local_points.size());
 
