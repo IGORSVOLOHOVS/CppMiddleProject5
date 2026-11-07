@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include "queries.hpp"
+#include <gtest/gtest.h>
 
 using namespace geometry;
 using namespace geometry::queries;
@@ -8,8 +8,8 @@ class QueriesTest : public ::testing::Test {
 protected:
     Circle circle_{{10, 0}, 5};
     Line line_{{0, 0}, {5, 0}};
-    Rectangle rect_{{10, 10}, 20, 10}; 
-    Triangle tri_{{0,0}, {10,0}, {5, 10}};
+    Rectangle rect_{{10, 10}, 20, 10};
+    Triangle tri_{{0, 0}, {10, 0}, {5, 10}};
 
     Point2D point_near_circle_{16, 0};
     Point2D point_on_line_{2, 0};
@@ -30,7 +30,7 @@ TEST_F(QueriesTest, DistanceToPoint) {
     EXPECT_NEAR(dist_to_line, 0.0, 1e-9);
 
     double dist_to_rect = DistanceToPoint(shape_rect_, point_near_rect_);
-    EXPECT_NEAR(dist_to_rect, 5.0, 1e-9); // Расстояние до правого края (30,15)
+    EXPECT_NEAR(dist_to_rect, 5.0, 1e-9);  // Расстояние до правого края (30,15)
 
     double dist_to_tri = DistanceToPoint(shape_tri_, point_on_tri_edge_);
     EXPECT_NEAR(dist_to_tri, 0.0, 1e-9);
@@ -57,9 +57,9 @@ TEST_F(QueriesTest, GetHeight) {
 }
 
 TEST_F(QueriesTest, BoundingBoxesOverlap) {
-    Circle c1{{0,0}, 2};
-    Circle c2{{3,0}, 2}; 
-    Circle c3{{5,0}, 2}; 
+    Circle c1{{0, 0}, 2};
+    Circle c2{{3, 0}, 2};
+    Circle c3{{5, 0}, 2};
     Shape s1 = c1, s2 = c2, s3 = c3;
 
     EXPECT_TRUE(BoundingBoxesOverlap(s1, s2));

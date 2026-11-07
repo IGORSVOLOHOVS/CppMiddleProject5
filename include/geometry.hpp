@@ -1,16 +1,17 @@
-#pragma once
+#ifndef GEOMETRY_GEOMETRY_HPP
+#define GEOMETRY_GEOMETRY_HPP
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <expected>
 #include <format>
+#include <limits>
 #include <numbers>
 #include <optional>
-#include <print>
 #include <ranges>
 #include <variant>
 #include <vector>
-#include <limits>
 
 namespace geometry {
 
@@ -21,7 +22,13 @@ struct RegularPolygon;
 struct Circle;
 class Polygon;
 
-enum class GeometryError { Unsupported, NoIntersection, InvalidInput, DegenrateCase, InsufficientPoints };
+enum class GeometryError : std::uint8_t {
+    Unsupported,
+    NoIntersection,
+    InvalidInput,
+    DegenrateCase,
+    InsufficientPoints
+};
 
 template <typename T>
 using GeometryResult = std::expected<T, GeometryError>;
@@ -36,7 +43,7 @@ using Shape = std::variant<Line, Triangle, Rectangle, RegularPolygon, Circle, Po
 #define GEOMETRY_EPSILON 1e-10
 #endif
 
-inline constexpr double EPSILON = GEOMETRY_EPSILON;  
+inline constexpr double EPSILON = GEOMETRY_EPSILON;
 
 [[nodiscard]] constexpr bool is_zero(double value) noexcept {
     // Здесь нельзя вызвать std::abs: для double он стал constexpr только в
@@ -46,18 +53,11 @@ inline constexpr double EPSILON = GEOMETRY_EPSILON;
     return (value < 0.0 ? -value : value) < EPSILON;
 }
 
-[[nodiscard]] constexpr bool are_equal(double a, double b) noexcept {
-    return is_zero(a - b);
-}
+[[nodiscard]] constexpr bool are_equal(double a, double b) noexcept { return is_zero(a - b); }
 
-[[nodiscard]] constexpr bool is_less(double a, double b) noexcept {
-    return (b - a) > EPSILON;
-}
+[[nodiscard]] constexpr bool is_less(double a, double b) noexcept { return (b - a) > EPSILON; }
 
-[[nodiscard]] constexpr bool is_greater(double a, double b) noexcept {
-    return (a - b) > EPSILON;
-}
-
+[[nodiscard]] constexpr bool is_greater(double a, double b) noexcept { return (a - b) > EPSILON; }
 
 /*
  * Добавьте к методам класса Point2D и Lines2DDyn все необходимые аттрибуты и спецификаторы
@@ -70,7 +70,9 @@ struct Point2D {
     constexpr Point2D(double x, double y) noexcept : x(x), y(y) {}
 
     // Comparison
-    [[nodiscard]] bool operator<(const Point2D &other) const noexcept { return std::tie(x, y) < std::tie(other.x, other.y); }
+    [[nodiscard]] bool operator<(const Point2D &other) const noexcept {
+        return std::tie(x, y) < std::tie(other.x, other.y);
+    }
     [[nodiscard]] bool operator==(const Point2D &other) const noexcept { return x == other.x && y == other.y; }
 
     // Binary math operators
@@ -121,8 +123,8 @@ struct BoundingBox {
 
     /* ваш код здесь */
     bool Overlaps(const BoundingBox &other) const {
-        if (is_less(max_x, other.min_x) || is_greater(min_x, other.max_x) ||
-            is_less(max_y, other.min_y) || is_greater(min_y, other.max_y)) {
+        if (is_less(max_x, other.min_x) || is_greater(min_x, other.max_x) || is_less(max_y, other.min_y) ||
+            is_greater(min_y, other.max_y)) {
             return false;
         }
         return true;
@@ -132,28 +134,28 @@ struct BoundingBox {
     double Height() const { return std::abs(max_y - min_y); }
 
     GeometryResult<Point2D> Center() const {
-        return std::expected<const BoundingBox*, GeometryError>{this}
-            .and_then([&](const BoundingBox* box) -> std::expected<const BoundingBox*, GeometryError> {
+        return std::expected<const BoundingBox *, GeometryError>{this}
+            .and_then([&](const BoundingBox *box) -> std::expected<const BoundingBox *, GeometryError> {
                 if (is_zero(box->Width())) {
                     return std::unexpected{GeometryError::InvalidInput};
                 }
                 return box;
             })
-            .and_then([&](const BoundingBox* box) -> std::expected<const BoundingBox*, GeometryError> {
+            .and_then([&](const BoundingBox *box) -> std::expected<const BoundingBox *, GeometryError> {
                 if (is_zero(box->Height())) {
                     return std::unexpected{GeometryError::InvalidInput};
                 }
                 return box;
             })
-            .transform([](const BoundingBox* box) -> Point2D {
+            .transform([](const BoundingBox *box) -> Point2D {
                 return {box->min_x + box->Width() / 2, box->min_y + box->Height() / 2};
-        });
+            });
     }
 };
 
 struct Line {
     Point2D start, end;
-    
+
     [[nodiscard]] double Height() const noexcept { return BoundBox().Height(); }
     [[nodiscard]] double Length() const noexcept { return start.DistanceTo(end); }
     [[nodiscard]] Point2D Center() const noexcept { return (start + end) / 2; }
@@ -212,19 +214,20 @@ struct Line {
         lines.PushBack(vertices.front());
         return lines;
     }
-    
+
     const size_t points_per_side = N / num_sides;
     namespace rs = std::ranges;
     namespace vs = std::views;
 
-    auto sides = vs::iota(0u, num_sides) | vs::transform([&](size_t i) {
-        return Line{vertices[i], vertices[(i + 1) % num_sides]};
-    });
+    auto sides = vs::iota(0u, num_sides) |
+                 vs::transform([&](size_t i) { return Line{vertices[i], vertices[(i + 1) % num_sides]}; });
 
     rs::for_each(sides | vs::enumerate, [&](const auto &enumerated_side) {
         auto &&[i, side] = enumerated_side;
-        const size_t current_points = (static_cast<size_t>(i) == num_sides - 1) ? (N - (num_sides - 1) * points_per_side) : points_per_side;
-        if (current_points == 0) return;
+        const size_t current_points =
+            (static_cast<size_t>(i) == num_sides - 1) ? (N - (num_sides - 1) * points_per_side) : points_per_side;
+        if (current_points == 0)
+            return;
 
         const Point2D step = (side.end - side.start) / static_cast<double>(current_points);
         auto generated_points = vs::iota(0u, current_points) |
@@ -256,17 +259,13 @@ struct Triangle {
         return BoundingBox{.min_x = min_x, .min_y = min_y, .max_x = max_x, .max_y = max_y};
     }
 
-    [[nodiscard]] std::array<Line, 3> Edges() const noexcept {
-        return {{{a, b}, {b, c}, {c, a}}};
-    }
+    [[nodiscard]] std::array<Line, 3> Edges() const noexcept { return {{{a, b}, {b, c}, {c, a}}}; }
 
     [[nodiscard]] std::vector<Point2D> Vertices() const noexcept {  // std::reference_wrapper mb
         return {a, b, c};
     }
 
-    [[nodiscard]] Lines2DDyn Lines(size_t N = 3) const {
-        return GenerateOutlineFromVertices(Vertices(), N);
-    }
+    [[nodiscard]] Lines2DDyn Lines(size_t N = 3) const { return GenerateOutlineFromVertices(Vertices(), N); }
 };
 
 struct Rectangle {
@@ -276,9 +275,9 @@ struct Rectangle {
     [[nodiscard]] double Area() const noexcept { return std::abs(width * height); }
     [[nodiscard]] double Width() const noexcept { return std::abs(width); }
     [[nodiscard]] double Height() const noexcept { return std::abs(height); }
-    
+
     [[nodiscard]] Point2D Center() const noexcept { return {bottom_left.x + width / 2, bottom_left.y + height / 2}; }
-    
+
     [[nodiscard]] BoundingBox BoundBox() const noexcept {
         // std::minmax возвращает пару ССЫЛОК. Передавать в неё временное
         // `bottom_left.x + width` нельзя: временное умирает в конце выражения,
@@ -306,18 +305,15 @@ struct Rectangle {
         const auto [min_y, max_y] = std::minmax(bottom_left.y, top);
 
         return {
-            {min_x, min_y}, 
-            {max_x, min_y}, 
-            {max_x, max_y}, 
-            {min_x, max_y}, 
-        }; 
+            {min_x, min_y},
+            {max_x, min_y},
+            {max_x, max_y},
+            {min_x, max_y},
+        };
     }
 
-    [[nodiscard]] Lines2DDyn Lines(size_t N = 4) const {
-        return GenerateOutlineFromVertices(Vertices(), N);
-    }
+    [[nodiscard]] Lines2DDyn Lines(size_t N = 4) const { return GenerateOutlineFromVertices(Vertices(), N); }
 };
-
 
 struct Circle {
     Point2D center_p;
@@ -331,7 +327,7 @@ struct Circle {
     }
 
     [[nodiscard]] double Height() const noexcept { return 2 * std::abs(radius); }
-    
+
     [[nodiscard]] Point2D Center() const noexcept { return center_p; }
 
     [[nodiscard]] std::vector<Point2D> Vertices(size_t N = 30) const {
@@ -344,11 +340,11 @@ struct Circle {
         namespace vs = std::views;
         namespace rs = std::ranges;
 
-        auto points_view =
-            vs::iota(0u, N) | vs::transform([this, N, r](size_t i) {
-                const double angle = 2.0 * std::numbers::pi * i / N;
-                return Point2D{center_p.x + r * std::cos(angle), center_p.y + r * std::sin(angle)};
-            });
+        auto points_view = vs::iota(0u, N) | vs::transform([this, N, r](size_t i) {
+                               const double angle =
+                                   2.0 * std::numbers::pi * static_cast<double>(i) / static_cast<double>(N);
+                               return Point2D{center_p.x + r * std::cos(angle), center_p.y + r * std::sin(angle)};
+                           });
 
         rs::copy(points_view, std::back_inserter(points));
         return points;
@@ -356,20 +352,19 @@ struct Circle {
 
     [[nodiscard]] Lines2DDyn Lines(size_t N = 100) const {
         Lines2DDyn result_lines{};
-        const auto verts = Vertices(N); 
+        const auto verts = Vertices(N);
         if (verts.empty()) {
             return result_lines;
         }
 
         result_lines.Reserve(verts.size() + 1);
-        for (const auto& p : verts) {
+        for (const auto &p : verts) {
             result_lines.PushBack(p);
         }
         result_lines.PushBack(verts.front());
 
         return result_lines;
     }
-
 };
 
 struct RegularPolygon {
@@ -401,13 +396,13 @@ struct RegularPolygon {
         return Circle{center_p, radius}.Vertices(std::clamp(sides, 0, std::numeric_limits<int>::max()));
     }
 
-    [[nodiscard]] Lines2DDyn Lines(size_t points_per_side = 10) const { 
+    [[nodiscard]] Lines2DDyn Lines(size_t points_per_side = 10) const {
         const size_t num_sides = std::clamp(sides, 0, std::numeric_limits<int>::max());
-        if (num_sides == 0) return {};
+        if (num_sides == 0)
+            return {};
         return GenerateOutlineFromVertices(Vertices(), points_per_side * num_sides);
     }
 };
-
 
 class Polygon {
 public:
@@ -440,17 +435,14 @@ public:
         if (points_.size() < 2) {
             return {};
         }
-        namespace rs = std::ranges;
-        namespace vs = std::views;
-        return vs::iota(0u, points_.size())
-                        | vs::transform([this](size_t i) {
-                            return Line{points_[i], points_[(i + 1) % points_.size()]};
-                        })
-                        | rs::to<std::vector>();
+        std::vector<Line> sides;
+        sides.reserve(points_.size());
+        for (size_t i = 0; i < points_.size(); ++i) {
+            sides.push_back(Line{points_[i], points_[(i + 1) % points_.size()]});
+        }
+        return sides;
     }
-    Lines2DDyn Lines(size_t N = 100) const {
-        return GenerateOutlineFromVertices(points_, N);
-    }
+    Lines2DDyn Lines(size_t N = 100) const { return GenerateOutlineFromVertices(points_, N); }
 
 private:
     std::vector<Point2D> points_;
@@ -585,3 +577,5 @@ struct std::formatter<geometry::Shape> {
         return std::visit([&ctx](const auto &s) { return std::format_to(ctx.out(), "{}", s); }, shape);
     }
 };
+
+#endif  // GEOMETRY_GEOMETRY_HPP

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GEOMETRY_TRIANGULATION_HPP
+#define GEOMETRY_TRIANGULATION_HPP
 #include "geometry.hpp"
 #include <algorithm>
 #include <format>
@@ -113,7 +114,7 @@ inline GeometryResult<std::vector<DelaunayTriangle>> DelaunayTriangulation(std::
 
     auto [min_x, max_x] = rs::minmax(points | vs::transform(&Point2D::x));
     auto [min_y, max_y] = rs::minmax(points | vs::transform(&Point2D::y));
-    
+
     double dx = max_x - min_x, dy = max_y - min_y;
     double delta_max = std::max(dx, dy);
     Point2D mid_point{(min_x + max_x) / 2, (min_y + max_y) / 2};
@@ -121,44 +122,41 @@ inline GeometryResult<std::vector<DelaunayTriangle>> DelaunayTriangulation(std::
     Point2D p1{mid_point.x - SCALE_COEF * delta_max, mid_point.y - delta_max};
     Point2D p2{mid_point.x, mid_point.y + SCALE_COEF * delta_max};
     Point2D p3{mid_point.x + SCALE_COEF * delta_max, mid_point.y - delta_max};
-    
+
     triangulation.emplace_back(p1, p2, p3);
     const DelaunayTriangle super_triangle{p1, p2, p3};
 
+    for (const Point2D &point : points) {
 
-    for (const Point2D& point : points) {
-        
-        auto bad_triangles_view = triangulation 
-                                | vs::filter([&](const auto& tri) { return tri.ContainsPoint(point); });
+        auto bad_triangles_view = triangulation | vs::filter([&](const auto &tri) { return tri.ContainsPoint(point); });
         std::vector<DelaunayTriangle> bad_triangles(bad_triangles_view.begin(), bad_triangles_view.end());
 
-        if (bad_triangles.empty()) continue;
+        if (bad_triangles.empty())
+            continue;
 
         EdgeCountMap edge_counts;
-        for (const auto& tri : bad_triangles) {
+        for (const auto &tri : bad_triangles) {
             auto v = tri.vertices();
             edge_counts[Edge(v[0], v[1])]++;
             edge_counts[Edge(v[1], v[2])]++;
             edge_counts[Edge(v[2], v[0])]++;
         }
 
-        auto hole_edges_view = edge_counts 
-                             | vs::filter([](const auto& pair) { return pair.second == 1; }) 
-                             | vs::keys;
-        
-        std::erase_if(triangulation, [&bad_triangles](const DelaunayTriangle& tri){
-            return rs::any_of(bad_triangles, [&](const DelaunayTriangle& bad) {
-                    return tri.a == bad.a && tri.b == bad.b && tri.c == bad.c;
-                });
+        auto hole_edges_view = edge_counts | vs::filter([](const auto &pair) { return pair.second == 1; }) | vs::keys;
+
+        std::erase_if(triangulation, [&bad_triangles](const DelaunayTriangle &tri) {
+            return rs::any_of(bad_triangles, [&](const DelaunayTriangle &bad) {
+                return tri.a == bad.a && tri.b == bad.b && tri.c == bad.c;
+            });
         });
 
-        for (const auto& edge : hole_edges_view) {
+        for (const auto &edge : hole_edges_view) {
             triangulation.emplace_back(edge.p1, edge.p2, point);
         }
     }
 
-    std::erase_if(triangulation, [&super_triangle](const DelaunayTriangle& tri){
-        auto has_super_vertex = [&super_triangle](const Point2D& v) {
+    std::erase_if(triangulation, [&super_triangle](const DelaunayTriangle &tri) {
+        auto has_super_vertex = [&super_triangle](const Point2D &v) {
             return v == super_triangle.a || v == super_triangle.b || v == super_triangle.c;
         };
         return has_super_vertex(tri.a) || has_super_vertex(tri.b) || has_super_vertex(tri.c);
@@ -177,3 +175,5 @@ struct std::formatter<geometry::triangulation::DelaunayTriangle> {
         return std::format_to(ctx.out(), "DelaunayTriangle({}, {}, {})", t.a, t.b, t.c);
     }
 };
+
+#endif  // GEOMETRY_TRIANGULATION_HPP
