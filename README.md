@@ -26,3 +26,7 @@ tests/    GoogleTest cases
 `.\recipe.ps1 test` builds the core, runs `ctest`, `clang-tidy` and `clang-format`, and searches `include` and `src` for locks and for `throw`, `try` and `catch`. It needs mingw g++, cmake, ninja and LLVM, and neither matplot++ nor gnuplot: it configures with `-DGEOMETRY_APP_DEMO=OFF`. `docs/install.md` has the details, and `docs/manual.md` covers the library and the demo.
 
 MIT licensed: `LICENSE` is the course's, copyright Yandex Practicum.
+
+## Lab requirements
+
+This repository complies with [revision 4.0.0](http://127.0.0.1:3000/igors-lab/software-requirements/src/tag/v4.0.0/BEST_REQUIREMENTS.md) of the lab requirements, except R-02 (#8), R-09 (#9), R-12 (#10), R-13 (#11), R-13 (#12), R-14 (#13), R-17 (#14), R-37 (#15), R-41 (#16), R-42 (#17).
