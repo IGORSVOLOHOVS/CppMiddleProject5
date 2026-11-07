@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include "intersections.hpp"
+#include <gtest/gtest.h>
 
 using namespace geometry;
 using namespace geometry::intersections;
@@ -44,6 +44,6 @@ TEST_F(IntersectionTest, LineCircleIntersection) {
 }
 
 TEST_F(IntersectionTest, UnsupportedIntersection) {
-    Rectangle r{{0,0}, 1, 1};
+    Rectangle r{{0, 0}, 1, 1};
     EXPECT_THROW(GetIntersectPoint(c1_, r), std::logic_error);
 }
