@@ -2,6 +2,28 @@
 
 Reverse-engineered from the code at commit `9136b85` on 2026-11-18. It describes implemented behaviour only. Hub: [`docs/README.md`](docs/README.md).
 
+<!-- jira-sync:start -->
+Jira: KAN-143
+
+## Tasks
+
+This list is one ticket in Jira project KAN, [KAN-143](https://igorsvolohovs.atlassian.net/browse/KAN-143). Each line is a checkbox there: tick it in Jira and the sync ticks it here; add a checkbox there and it is appended here. Done items are the features described in section 3; open items are what the project declares but the code does not do yet.
+
+- [x] Primitives and tolerance (section 3.1) <!-- spec-primitives-and-tolerance -->
+- [x] Shapes (section 3.2) <!-- spec-shapes -->
+- [x] Intersections (section 3.3) <!-- spec-intersections -->
+- [x] Queries (section 3.4) <!-- spec-queries -->
+- [x] Convex hull (section 3.5) <!-- spec-convex-hull -->
+- [x] Delaunay triangulation (section 3.6) <!-- spec-delaunay-triangulation -->
+- [x] Shape utilities (section 3.7) <!-- spec-shape-utilities -->
+- [x] Demo application (section 3.8) <!-- spec-demo-application -->
+- [ ] `StackForGrahamScan`, an empty class that nothing uses (declared, not implemented) <!-- spec-stackforgrahamscan-an-empty-class-that-nothing-use -->
+- [ ] Shape-to-shape distance for "Any & Point", named in the visitor comment (declared, not implemented) <!-- spec-shape-to-shape-distance-for-any-point-named-in-the -->
+- [ ] `GeometryError::Unsupported`, `NoIntersection`, `DegenrateCase`, declared but never returned (declared, not implemented) <!-- spec-geometryerror-unsupported-nointersection-degenrate -->
+- [ ] `recipe.ps1 install`, which prints "nothing to install" (declared, not implemented) <!-- spec-recipe-ps1-install-which-prints-nothing-to-install -->
+
+<!-- jira-sync:end -->
+
 ## 1. Purpose and scope
 
 **In scope:** the C++23 geometry library in `include/` and `src/convex_hull.cpp`, the `GeometryApp` console demo (`src/main.cpp`, `src/visualization.cpp`), and the tests in `tests/`.
